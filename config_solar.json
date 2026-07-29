@@ -1,0 +1,55 @@
+{
+    "backup_path": "C:\\RTACBackups",
+    "group_name": "Solar",
+
+    "rtacs": [
+        {
+            "device": "BUR-PPC01",
+            "site": "Burdett",
+            "ip": "10.127.219.10",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#BUR"
+        },
+		{
+            "device": "BUR-AXION01",
+            "site": "Burdett",
+            "ip": "10.127.219.12",
+            "enabled": true,
+            "username": "beam_ops",
+            "password": "R3new@bl3#BUR"
+        },
+        {
+            "device": "HAY-PPC01",
+            "site": "Hays",
+            "ip": "10.127.220.25",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#HAYSPPC"
+        },
+        {
+            "device": "HAY-RTAC01",
+            "site": "Hays",
+            "ip": "10.127.220.26",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#HAYSGTY"
+        },
+		{
+            "device": "JEN-PPC01",
+            "site": "Jenner",
+            "ip": "10.127.221.25",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#JENPPC"
+        },
+        {
+            "device": "JEN-RTAC01",
+            "site": "Jenner",
+            "ip": "10.127.221.26",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#JENGTY"
+        }
+    ]
+}
