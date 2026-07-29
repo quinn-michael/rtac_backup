@@ -43,6 +43,18 @@ def ReadRTAC_function(device, ipaddress, username, password, backup_folder):
     output, error = p.communicate()
     print(output)
 
+    # Parse the return message for any errors.
+    if "read:0:success" not in output:
+
+        if "Network error" in output:
+            raise Exception(
+                f"Network connection failed ({ipaddress})")
+        if "login parameters correct" in output:
+            raise Exception(
+                f"Authentication failed ({ipaddress})")
+        raise Exception(
+            f"AcRtacCmd read failed")
+
     # To back up and convert the project, find its name in the RTAC response
     # by splitting on the newline character
     project = None
@@ -71,8 +83,6 @@ def ReadRTAC_function(device, ipaddress, username, password, backup_folder):
     print(output)
 
 
-#config = load_config("config_solar.json")
-
 if len(sys.argv) != 2:
     print("Usage: RTACBackup.exe <config_file>")
     sys.exit(1)
@@ -91,6 +101,8 @@ backup_folder = create_backup_folder(
 print(f"Backup Folder: {backup_folder}")
 print(f"RTAC Count: {len(config['rtacs'])}")
 
+results = []
+
 for rtac in config["rtacs"]:
 
     if not rtac.get("enabled", True):
@@ -98,10 +110,57 @@ for rtac in config["rtacs"]:
 
     print(f"Processing {rtac['device']}")
 
-    ReadRTAC_function(
-        rtac["device"],
-        rtac["ip"],
-        rtac["username"],
-        rtac["password"],
-        backup_folder
+    try:
+        ReadRTAC_function(
+            rtac["device"],
+            rtac["ip"],
+            rtac["username"],
+            rtac["password"],
+            backup_folder
+            )
+
+        results.append({
+            "device": rtac["device"],
+            "status": "Success",
+            "message": ""})
+
+    except Exception as ex:
+        print(
+            f"ERROR: {rtac['device']} -{ex}"
+        )
+
+        results.append({
+            "device": rtac["device"],
+            "status": "Failed",
+            "message": str(ex)})
+
+print("\n")
+print("=" * 60)
+print("BACKUP SUMMARY")
+print("=" * 60)
+
+success_count = sum(
+    1 for r in results
+    if r["status"] == "Success"
+)
+
+failure_count = sum(
+    1 for r in results
+    if r["status"] == "Failed"
+)
+
+print(f"Successful: {success_count}")
+print(f"Failed: {failure_count}")
+print()
+
+for result in results:
+
+    print(
+        f"{result['device']}: "
+        f"{result['status']}"
+    )
+
+    if result["message"]:
+        print(
+            f"    {result['message']}"
         )
