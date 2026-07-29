@@ -217,10 +217,10 @@ try:
 
     startup()
 
-    #deleted_projects = clear_projects()
-    #print(
-    #    f"Deleted {deleted_projects} existing projects"
-    #    )
+    deleted_projects = clear_projects()
+    print(
+        f"Deleted {deleted_projects} existing projects"
+        )
 
     # Temporary test print
     print(f"Backup Folder: {backup_folder}")
@@ -274,7 +274,7 @@ try:
         if r["status"] == "Failed"
     )
 
-    #print(f"Existing Projects Removed: {deleted_projects}")
+    print(f"Existing Projects Removed: {deleted_projects}")
     print(f"Successful Backups: {success_count}")
     print(f"Failed Backups: {failure_count}")
     print()

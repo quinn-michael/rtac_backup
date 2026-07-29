@@ -7,17 +7,17 @@
             "device": "BUR-PPC01",
             "site": "Burdett",
             "ip": "10.127.219.10",
-            "enabled": false,
+            "enabled": true,
             "username": "beam_ops",
             "password": "R3new@bl3#BUR"
         },
 		{
             "device": "BUR-AXION01",
             "site": "Burdett",
-            "ip": "10.127.219.12",
+            "ip": "10.127.219.11",
             "enabled": true,
             "username": "beam_ops",
-            "password": "R3new@bl3#BUR"
+            "password": "R3new@bl3#BUR2"
         },
         {
             "device": "HAY-PPC01",
@@ -50,6 +50,22 @@
             "enabled": false,
             "username": "beam_ops",
             "password": "R3new@bl3#JENGTY"
+        },
+        {
+            "device": "SUF-PPC01",
+            "site": "Suffield",
+            "ip": "10.10.20.25",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#SUFPPC"
+        },
+        {
+            "device": "SUF-RTAC01",
+            "site": "Suffield",
+            "ip": "10.10.20.26",
+            "enabled": false,
+            "username": "beam_ops",
+            "password": "R3new@bl3#SUFGTY"
         }
     ]
 }
