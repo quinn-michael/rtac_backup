@@ -268,6 +268,34 @@ def read_and_backup_rtac(device, ipaddress, username, password, backup_folder):
         f"{project}.exp"
     )
 
+def run_connectivity_test(config):
+
+    passed = 0
+    failed = 0
+
+    for rtac in config["rtacs"]:
+
+        if not rtac.get("enabled", True):
+            continue
+
+        if connectivity_check(
+            rtac["device"],
+            rtac["ip"]
+        ):
+            passed += 1
+        else:
+            failed += 1
+
+    logging.info("=" * 60)
+    logging.info(
+        f"Connectivity Passed: {passed}"
+    )
+    logging.info(
+        f"Connectivity Failed: {failed}"
+    )
+
+    return failed
+
 def setup_logging(base_path, group_name):
 
     log_folder = os.path.join(
@@ -445,9 +473,19 @@ def validate_config(config):
     )
 
 
-if len(sys.argv) != 2:
-    print("Usage: RTACBackup.exe <config_file>")
+if len(sys.argv) not in [2, 3]:
+    print("Usage: RTACBackup.exe <config_file> [--test-connectivity]")
     sys.exit(1)
+
+if len(sys.argv) == 3 and sys.argv[2] != "--test-connectivity":
+    print("Usage: RTACBackup.exe <config_file> [--test-connectivity]")
+    print(f"Unknown option: {sys.argv[2]}")
+    sys.exit(1)
+
+connectivity_only = (
+    len(sys.argv) == 3
+    and sys.argv[2] == "--test-connectivity"
+)
 
 config_file = sys.argv[1]
 
@@ -466,9 +504,30 @@ except Exception as ex:
     )
     sys.exit(1)
 
-logging.info("RTAC backup started")
+logging.info(
+    "=" * 60
+)
+
+if connectivity_only:
+    logging.info("RTAC connectivity test started")
+else:
+    logging.info("RTAC backup started")
+
 logging.info(f"Configuration file: {config_file}")
 logging.info(f"Log file: {log_file}")
+
+if connectivity_only:
+
+    logging.info(
+        "Running connectivity test only"
+    )
+
+    failed_count = run_connectivity_test(config)
+
+    if failed_count > 0:
+        sys.exit(1)
+
+    sys.exit(0)
 
 backup_folder = create_backup_folder(
     config["backup_path"],

@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.6.0
+
+### Added
+- Connectivity test mode
+- --test-connectivity command-line option
+- connectivity summary reporting.
+- Exit codes for connectivity validation results.
+
+### Changed
+- Connectivity checks can now be run independently of the backup process
+- Connectivity test mode validates configuration before execution
+- Connectivity test mode skips AcSELerator startup, login, project cleanup, backup execution, and retention cleanup
+
+### Improved
+- Faster validation of firewall, routing, VPN, and network access
+- Simplified commissioning and troubleshooting workflows
+
 ## v1.5.0
 
 ### Added

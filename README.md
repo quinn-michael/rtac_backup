@@ -18,6 +18,7 @@ The tool is designed to support unattended execution through Windows Task Schedu
 - ICMP ping connectivity check before attempting backup
 - Fast failure for unreachable devices
 - Clear logging for connectivity issues
+- Connectivity-only test mode for validating network access without performing backups.
 
 ### Backup Management
 - Reads RTAC projects using AcRtacCmd
@@ -115,17 +116,51 @@ Example:
 
 ## Execution
 
-### Run with Python
+### Full Backup Run
 
 ```cmd
 python main.py config_solar.json
 ```
 
-### Run as Executable
+or
 
 ```cmd
 RTACBackup.exe config_solar.json
 ```
+
+Performs:
+
+- Configuration validation
+- AcSELerator startup
+- Project cleanup
+- RTAC backup and export
+- Retention cleanup
+
+### Connectivity Test Only
+
+```cmd
+python main.py config_solar.json --test-connectivity
+```
+
+or
+
+```cmd
+RTACBackup.exe config_solar.json --test-connectivity
+```
+
+Performs:
+
+- Configuration validation
+- RTAC connectivity testing
+
+Does not perform:
+
+- AcSELerator startup
+- AcSELerator login
+- Project cleanup
+- RTAC read operations
+- Project exports
+- Backup retention cleanup
 
 ---
 
