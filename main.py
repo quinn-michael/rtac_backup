@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import logging
 from datetime import date
 from subprocess import Popen, PIPE
 
@@ -41,11 +42,15 @@ def clear_projects():
 
         projects.append(project_name)
 
-    print(f"Found {len(projects)} existing projects")
+    logging.info(
+        f"Found {len(projects)} existing projects"
+    )
 
     for project in projects:
 
-        print(f"Deleting {project}")
+        logging.info(
+            f"Deleting project: {project}"
+        )
 
         command = f'AcRtacCmd delete "{project}"'
 
@@ -59,9 +64,9 @@ def clear_projects():
 
         output, error = p.communicate()
 
-        print(output)
+        logging.info(output.strip())
 
-        return len(projects)
+    return len(projects)
 
 def create_backup_folder(base_path, group_name):
     today = date.today().strftime("%Y-%m-%d")
@@ -73,22 +78,10 @@ def create_backup_folder(base_path, group_name):
     return backup_folder
 
 def ReadRTAC_function(device, ipaddress, username, password, backup_folder):
-    # This script follows the pattern: Define command, print command to screen for
-    # the user, execute the command using Popen, capture output and errors, and print
-    # the output to the screen for the user.
 
-    #command = "AcRtacCmd start"
-    #print("Command: ", command)
-    #p = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE, universal_newlines=True)
-    #output, error = p.communicate()
-    #print(output)
-
-    # log in to the database before reading the project, default username considered
-    #command = "AcRtacCmd login -p TAIL admin"
-    #print("Command: ", command)
-    #p = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE, universal_newlines=True)
-    #output, error = p.communicate()
-    #print(output)
+    logging.info(
+        f"Starting backup of {device}"
+    )
 
     # Read the project with all advanced items
     command = 'AcRtacCmd read -p {} -v ALL {} {}'.format(password, ipaddress, username)
@@ -136,6 +129,38 @@ def ReadRTAC_function(device, ipaddress, username, password, backup_folder):
     output, error = p.communicate()
     print(output)
 
+    if "exportexp:0:success" not in output:
+        raise Exception(
+            f"Project export failed ({project})\n{output}"
+        )
+
+    logging.info(
+        f"{device} successfully backed up as "
+        f"{project}.exp"
+    )
+
+def setup_logging():
+
+    log_folder = "logs"
+
+    os.makedirs(log_folder, exist_ok=True)
+
+    log_file = os.path.join(
+        log_folder,
+        f"rtac_backup_{date.today().strftime('%Y-%m-%d')}.log"
+    )
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+
+    return log_file
+
 def startup():
 
     command = "AcRtacCmd start"
@@ -152,7 +177,7 @@ def startup():
 
     output, error = p.communicate()
 
-    print(output)
+    logging.info(output.strip())
 
     if "start:0:success" not in output:
         raise Exception("Unable to start AcSELerator RTAC")
@@ -171,7 +196,7 @@ def startup():
 
     output, error = p.communicate()
 
-    print(output)
+    logging.info(output.strip())
 
     if "login:0:success" not in output:
         raise Exception("Unable to login to AcSELerator RTAC")
@@ -192,7 +217,7 @@ def shutdown():
 
     output, error = p.communicate()
 
-    print(output)
+    logging.info(output.strip())
 
     if "stop:0:success" not in output:
         raise Exception(
@@ -207,6 +232,12 @@ if len(sys.argv) != 2:
 config_file = sys.argv[1]
 
 config = load_config(config_file)
+
+log_file = setup_logging()
+
+logging.info("RTAC Backup Started")
+logging.info(f"Configuration File: {config_file}")
+logging.info(f"Log File: {log_file}")
 
 backup_folder = create_backup_folder(
     config["backup_path"],
@@ -233,7 +264,9 @@ try:
         if not rtac.get("enabled", True):
             continue
 
-        print(f"Processing {rtac['device']}")
+        logging.info(
+            f"Processing {rtac['device']}"
+        )
 
         try:
             ReadRTAC_function(
@@ -250,19 +283,14 @@ try:
                 "message": ""})
 
         except Exception as ex:
-            print(
-                f"ERROR: {rtac['device']} -{ex}"
+            logging.error(
+                f"{rtac['device']} - {ex}"
             )
 
             results.append({
                 "device": rtac["device"],
                 "status": "Failed",
                 "message": str(ex)})
-
-    print("\n")
-    print("=" * 60)
-    print("BACKUP SUMMARY")
-    print("=" * 60)
 
     success_count = sum(
         1 for r in results
@@ -274,10 +302,24 @@ try:
         if r["status"] == "Failed"
     )
 
-    print(f"Existing Projects Removed: {deleted_projects}")
-    print(f"Successful Backups: {success_count}")
-    print(f"Failed Backups: {failure_count}")
-    print()
+    logging.info(
+        "=" * 60
+    )
+
+    logging.info(
+        f"Projects Removed: {deleted_projects}"
+    )
+
+    logging.info(
+        f"Successful: {success_count}"
+    )
+
+    logging.info(
+        f"Failed: {failure_count}"
+    )
+
+    print("\n")
+    print("=" * 60)
 
     for result in results:
 
