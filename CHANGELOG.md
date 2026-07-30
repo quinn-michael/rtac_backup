@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.3.0
+
+### Added
+- Configuration validation before backup execution
+- Validation for required top-level configuration fields
+- Validation for required RTAC fields
+- Duplicate device name detection
+- Duplicate IP address detection
+- Validation to ensure at least one RTAC is enabled
+- Configuration validation failure logging
+
+### Changed
+- Moved configured and enabled RTAC count logging into configuration validation
+- Improved startup sequence so invalid configurations fail before backup folder creation, AcSELerator startup, project cleanup, or RTAC reads
+
+### Fixed
+- Prevented full Python tracebacks for configuration validation failures during normal execution
+
 ## v1.2.0
 ### Added
 - Structured logging with daily log files

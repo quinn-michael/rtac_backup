@@ -231,6 +231,89 @@ def shutdown():
             "Unable to stop AcSELerator RTAC"
         )
 
+def validate_config(config):
+
+    logging.info("Validating configuration")
+
+    required_top_level = [
+        "backup_path",
+        "group_name",
+        "rtacs"
+    ]
+
+    for field in required_top_level:
+
+        if field not in config:
+            raise Exception(
+                f"Missing required config field: {field}"
+            )
+
+    if not isinstance(config["rtacs"], list):
+        raise Exception(
+            "Configuration error: RTACs must be a list"
+        )
+
+    if len(config["rtacs"]) == 0:
+        raise Exception(
+            "Configuration error: no RTACs defined"
+        )
+
+    enabled_rtacs = [
+        rtac
+        for rtac in config["rtacs"]
+        if rtac.get("enabled", True)
+    ]
+
+    if len(enabled_rtacs) == 0:
+        raise Exception(
+            "Configuration error: no enabled RTACs"
+        )
+
+    device_names = set()
+    ip_addresses = set()
+
+    required_rtac_fields = [
+        "device",
+        "ip",
+        "username",
+        "password"
+    ]
+
+    for rtac in config["rtacs"]:
+
+        for field in required_rtac_fields:
+
+            if field not in rtac:
+                raise Exception(
+                    f"RTAC missing field: {field}"
+                )
+
+        if rtac["device"] in device_names:
+            raise Exception(
+                f"Duplicate device name: {rtac['device']}"
+            )
+
+        device_names.add(rtac["device"])
+
+        if rtac["ip"] in ip_addresses:
+            raise Exception(
+                f"Duplicate IP address: {rtac['ip']}"
+            )
+
+        ip_addresses.add(rtac["ip"])
+
+    logging.info(
+        f"Configured RTACs: {len(config['rtacs'])}"
+    )
+
+    logging.info(
+        f"Enabled RTACs: {len(enabled_rtacs)}"
+    )
+
+    logging.info(
+        "Configuration validation passed"
+    )
+
 
 if len(sys.argv) != 2:
     print("Usage: RTACBackup.exe <config_file>")
@@ -245,6 +328,14 @@ log_file = setup_logging(
     config["group_name"]
 )
 
+try:
+    validate_config(config)
+except Exception as ex:
+    logging.error(
+        f"Configuration validation failed: {ex}"
+    )
+    sys.exit(1)
+
 logging.info("RTAC backup started")
 logging.info(f"Configuration file: {config_file}")
 logging.info(f"Log file: {log_file}")
@@ -255,20 +346,6 @@ backup_folder = create_backup_folder(
     )
 
 logging.info(f"Backup folder: {backup_folder}")
-
-enabled_rtacs = [
-    rtac
-    for rtac in config["rtacs"]
-    if rtac.get("enabled", True)
-]
-
-logging.info(
-    f"Configured RTACs: {len(config['rtacs'])}"
-)
-
-logging.info(
-    f"Enabled RTACs: {len(enabled_rtacs)}"
-)
 
 try:
 
