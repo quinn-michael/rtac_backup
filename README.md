@@ -63,9 +63,9 @@ The tool is designed to support unattended execution through Windows Task Schedu
 ### Software
 
 - Windows 10 or Windows 11
-- Python 3.10+
 - SEL AcSELerator RTAC
 - AcRtacCmd accessible from the system PATH
+- Python 3.10+ (for development or testing)
 
 ### Network
 
@@ -138,6 +138,11 @@ Example:
 ---
 
 ## Execution
+
+### Install Dependencies
+```cmd
+pip install keyring
+```
 
 ### Full Backup Run
 
