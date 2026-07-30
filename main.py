@@ -4,8 +4,10 @@ import os
 import sys
 import logging
 import shutil
+import smtplib
 from datetime import date, datetime
 from subprocess import Popen, PIPE, run
+from email.message import EmailMessage
 
 def load_config(config_file):
     with open(config_file, "r") as f:
@@ -296,6 +298,117 @@ def run_connectivity_test(config):
 
     return failed
 
+def send_summary_email(
+    config,
+    log_file,
+    success_count,
+    failure_count,
+    deleted_projects,
+    deleted_backup_folders,
+    results
+):
+
+    subject_status = (
+        "Success"
+        if failure_count == 0
+        else "Failures Detected"
+    )
+
+    subject = (
+        f"RTAC Backup Summary - "
+        f"{config['group_name']} - "
+        f"{subject_status}"
+    )
+
+    body = []
+
+    body.append("RTAC Backup Summary")
+    body.append("")
+    body.append(
+        f"Group: {config['group_name']}"
+    )
+    body.append(
+        f"Date: {date.today()}"
+    )
+    body.append("")
+    body.append(
+        f"Projects Removed: {deleted_projects}"
+    )
+    body.append(
+        f"Backup Folders Removed: "
+        f"{deleted_backup_folders}"
+    )
+    body.append("")
+    body.append(
+        f"Successful: {success_count}"
+    )
+    body.append(
+        f"Failed: {failure_count}"
+    )
+
+    failed_devices = [
+        r for r in results
+        if r["status"] == "Failed"
+    ]
+
+    if failed_devices:
+
+        body.append("")
+        body.append("Failed Devices:")
+        body.append("")
+
+        for device in failed_devices:
+
+            body.append(
+                f"{device['device']}: "
+                f"{device['message']}"
+            )
+
+    msg = EmailMessage()
+
+    msg["Subject"] = subject
+
+    msg["From"] = config["smtp_sender"]
+
+    msg["To"] = ", ".join(
+        config["notification_recipients"]
+    )
+
+    msg.set_content(
+        "\n".join(body)
+    )
+
+    with open(log_file, "rb") as f:
+
+        msg.add_attachment(
+            f.read(),
+            maintype="text",
+            subtype="plain",
+            filename=os.path.basename(log_file)
+        )
+
+    server = smtplib.SMTP_SSL(
+        config["smtp_server"],
+        config["smtp_port"]
+    )
+
+    try:
+
+        server.login(
+            config["smtp_username"],
+            config["smtp_password"]
+        )
+
+        server.send_message(msg)
+
+        logging.info(
+            "Summary email sent successfully"
+        )
+
+    finally:
+
+        server.quit()
+
 def setup_logging(base_path, group_name):
 
     log_folder = os.path.join(
@@ -405,6 +518,23 @@ def validate_config(config):
         raise Exception(
             "retention_backups must be greater than 0"
         )
+    
+    required_email_fields = [
+        "smtp_server",
+        "smtp_port",
+        "smtp_username",
+        "smtp_password",
+        "smtp_sender",
+        "notification_recipients"
+    ]
+
+    for field in required_email_fields:
+
+        if field not in config:
+
+            raise Exception(
+                f"Missing email config field: {field}"
+            )
 
     if not isinstance(config["rtacs"], list):
         raise Exception(
@@ -633,6 +763,22 @@ try:
         f"Backup Folders Removed: "
         f"{deleted_backup_folders}"
     )
+
+    try:
+        send_summary_email(
+            config,
+            log_file,
+            success_count,
+            failure_count,
+            deleted_projects,
+            deleted_backup_folders,
+            results
+        )
+
+    except Exception as ex:
+        logging.error(
+            f"Failed to send summary email: {ex}"
+        )   
 
 finally:
 

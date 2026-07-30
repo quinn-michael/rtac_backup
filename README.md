@@ -49,6 +49,13 @@ The tool is designed to support unattended execution through Windows Task Schedu
 - Processes all configured RTACs
 - Shuts down AcSELerator on completion
 
+### Email Notifications
+
+- Automatic email summary after backup completion.
+- Backup log attachment.
+- Reports successful and failed devices.
+- Indicates project cleanup and retention activity.
+
 ---
 
 ## Requirements
@@ -80,17 +87,27 @@ Example:
     "group_name": "Solar",
     "retention_backups": 6,
 
+    "smtp_server": "mail.smtp2go.com",
+    "smtp_port": 465,
+    "smtp_username": "smtp-user",
+    "smtp_password": "smtp-password",
+    "smtp_sender": "rtac-backups@bluearth.ca",
+    
+    "notification_recipients": [
+        "user@bluearth.ca"
+    ],
+
     "rtacs": [
         {
             "device": "BUR-PPC01",
-            "ip": "10.127.219.10",
+            "ip": "10.10.10.10",
             "username": "SEL",
             "password": "password",
             "enabled": true
         },
         {
             "device": "BUR-AXION01",
-            "ip": "10.127.219.11",
+            "ip": "10.10.10.11",
             "username": "SEL",
             "password": "password",
             "enabled": false
@@ -106,6 +123,12 @@ Example:
 | backup_path | Root backup directory |
 | group_name | Backup group name |
 | retention_backups| Number of backup sets to retain |
+| smtp_server | SMTP server hostname |
+| smtp_port | SMTP server port |
+| smtp_username | SMTP account username |
+| smtp_password | SMTP account password |
+| smtp_sender | Email sender address |
+| notification_recipients | List of notification recipients |
 | device | Friendly device name |
 | ip | RTAC IP address |
 | username | RTAC username |
@@ -326,6 +349,45 @@ If connectivity fails:
 
 ---
 
+## Email Notifications
+
+The utility can send a summary email after backup completion.
+
+Email content includes:
+
+- Backup group name
+- Execution date
+- Projects removed
+- Backup folders removed
+- Successful backup count
+- Failed backup count
+- Failed device details
+
+The daily log file is attached to the email.
+
+Example Subject:
+
+```text
+RTAC Backup Summary - Solar - Success
+```
+
+Example Summary:
+
+```text
+RTAC Backup Summary
+
+Group: Solar
+Date: 2026-07-30
+
+Projects Removed: 1
+Backup Folders Removed: 0
+
+Successful: 4
+Failed: 0
+```
+
+---
+
 ## Backup Workflow
 
 ### Full Backup Mode
@@ -355,6 +417,8 @@ Cleanup Old Backup Sets
         ↓
 Summary Logging
         ↓
+Send Summary Email
+        ↓
 Stop AcSELerator
 ```
 
@@ -375,6 +439,12 @@ Exit
 ---
 
 ## Version History
+
+### v1.7.0
+- Added email notifications
+- Added backup summary emails
+- Added log file email attachments
+- Added failed device reporting
 
 ### v1.6.0
 - Added connectivity-only test mode

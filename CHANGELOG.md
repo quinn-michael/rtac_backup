@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.7.0
+
+### Added
+- Email summary notifications
+- Support for attaching the backup log file to email notifications
+- Backup summary reporting via email
+- Failed device reporting in email notifications
+
+### Configuration
+- Added smtp_server configuration setting
+- Added smtp_port configuration setting
+- Added smtp_username configuration setting
+- Added smtp_password configuration setting
+- Added smtp_sender configuration setting
+- Added notification_recipients configuration setting
+
+### Improved
+- Backup results can now be reviewed without accessing the backup host
+- Log files are automatically attached to notification emails
+- Successful and failed backup counts are included in email summaries
+
 ## v1.6.0
 
 ### Added
