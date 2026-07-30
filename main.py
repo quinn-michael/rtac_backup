@@ -4,7 +4,7 @@ import os
 import sys
 import logging
 from datetime import date
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, run
 
 def load_config(config_file):
     with open(config_file, "r") as f:
@@ -67,6 +67,32 @@ def clear_projects():
         logging.info(output.strip())
 
     return len(projects)
+
+def connectivity_check(device, ipaddress):
+
+    logging.info(
+        f"Checking connectivity to {device} ({ipaddress})"
+    )
+
+    result = run(
+        ["ping", "-n", "1", ipaddress],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode == 0:
+
+        logging.info(
+            f"{device} connectivity check passed"
+        )
+
+        return True
+
+    logging.error(
+        f"{device} connectivity check failed"
+    )
+
+    return False
 
 def create_backup_folder(base_path, group_name):
     today = date.today().strftime("%Y-%m-%d")
@@ -365,6 +391,22 @@ try:
         )
 
         try:
+            if not connectivity_check(
+                rtac["device"],
+                rtac["ip"]
+            ):
+
+                results.append({
+                    "device": rtac["device"],
+                    "status": "Failed",
+                    "message": (
+                        f"Connectivity check failed "
+                        f"({rtac['ip']})"
+                    )
+                })
+
+                continue
+
             read_and_backup_rtac(
                 rtac["device"],
                 rtac["ip"],

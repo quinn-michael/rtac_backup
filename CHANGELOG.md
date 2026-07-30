@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.0
+
+### Added
+- Connectivity pre-checks using ICMP ping
+- Connectivity status logging for each RTAC
+- Fast-fail behavior for unreachable RTACs
+
+### Changed
+- Skip backup attempts for RTACs that fail connectivity checks
+
+### Improved
+- Faster backup execution when sites are unreachable
+- Clearer troubleshooting information in log files
+
 ## v1.3.0
 
 ### Added
