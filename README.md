@@ -120,6 +120,24 @@ RTACBackup.exe config_solar.json
 
 ---
 
+## Building Executable
+
+Run the following commands on a computer with Python installed:
+
+### Install PyInstaller
+
+```cmd
+pip install pyinstaller
+```
+
+### Generate Executable
+
+```cmd
+pyinstaller --onefile --name RTACBackup main.py
+```
+
+---
+
 ## Backup Structure
 
 Example:
