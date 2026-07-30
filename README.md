@@ -218,7 +218,7 @@ Example:
 retention_backups = 6
 
 Backup folders:
-
+```text
 2026-01-01
 2026-02-01
 2026-03-01
@@ -227,15 +227,17 @@ Backup folders:
 2026-06-01
 2026-07-01
 2026-08-01
+```
 
 After cleanup:
-
+```text
 2026-03-01
 2026-04-01
 2026-05-01
 2026-06-01
 2026-07-01
 2026-08-01
+```
 
 Only folders matching the YYYY-MM-DD naming format are considered backup folders.
 
