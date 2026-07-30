@@ -3,12 +3,109 @@ import json
 import os
 import sys
 import logging
-from datetime import date
+import shutil
+from datetime import date, datetime
 from subprocess import Popen, PIPE, run
 
 def load_config(config_file):
     with open(config_file, "r") as f:
         return json.load(f)
+
+def cleanup_old_backups(
+    base_path,
+    group_name,
+    retention_backups
+):
+
+    backup_root = os.path.join(
+        base_path,
+        group_name
+    )
+
+    if not os.path.exists(backup_root):
+
+        logging.info(
+            "Backup root does not exist"
+        )
+
+        return 0
+
+    backup_folders = []
+
+    for entry in os.listdir(backup_root):
+
+        folder_path = os.path.join(
+            backup_root,
+            entry
+        )
+
+        if not os.path.isdir(folder_path):
+            continue
+
+        try:
+
+            folder_date = datetime.strptime(
+                entry,
+                "%Y-%m-%d"
+            )
+
+            backup_folders.append(
+                (folder_date, folder_path)
+            )
+
+        except ValueError:
+
+            logging.debug(
+                f"Skipping folder: {entry}"
+            )
+
+            continue
+
+    logging.info(
+        f"Found {len(backup_folders)} backup folders"
+    )
+
+    logging.info(
+        f"Retention count: {retention_backups}"
+    )
+
+    backup_folders.sort()
+
+    if len(backup_folders) <= retention_backups:
+
+        logging.info(
+            "No backup folders require removal"
+        )
+
+        return 0
+
+    folders_to_delete = backup_folders[
+        :-retention_backups
+    ]
+
+    logging.info(
+        f"Backup folders to remove: "
+        f"{len(folders_to_delete)}"
+    )
+
+    deleted_count = 0
+
+    for folder_date, folder_path in folders_to_delete:
+
+        logging.info(
+            f"Removing backup folder: {folder_path}"
+        )
+
+        shutil.rmtree(folder_path)
+
+        deleted_count += 1
+
+    logging.info(
+        f"Removed {deleted_count} "
+        f"old backup folders"
+    )
+
+    return deleted_count
 
 def clear_projects():
 
@@ -89,7 +186,7 @@ def connectivity_check(device, ipaddress):
         return True
 
     logging.error(
-        f"{device} connectivity check failed"
+        f"{device} connectivity check failed ({ipaddress})"
     )
 
     return False
@@ -264,6 +361,7 @@ def validate_config(config):
     required_top_level = [
         "backup_path",
         "group_name",
+        "retention_backups",
         "rtacs"
     ]
 
@@ -273,6 +371,12 @@ def validate_config(config):
             raise Exception(
                 f"Missing required config field: {field}"
             )
+
+    if config["retention_backups"] < 1:
+
+        raise Exception(
+            "retention_backups must be greater than 0"
+        )
 
     if not isinstance(config["rtacs"], list):
         raise Exception(
@@ -440,6 +544,16 @@ try:
         if r["status"] == "Failed"
     )
 
+    deleted_backup_folders = 0
+
+    if success_count > 0:
+
+        deleted_backup_folders = cleanup_old_backups(
+            config["backup_path"],
+            config["group_name"],
+            config["retention_backups"]
+        )
+
     logging.info(
         "=" * 60
     )
@@ -454,6 +568,11 @@ try:
 
     logging.info(
         f"Failed: {failure_count}"
+    )
+
+    logging.info(
+        f"Backup Folders Removed: "
+        f"{deleted_backup_folders}"
     )
 
 finally:

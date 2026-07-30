@@ -24,6 +24,13 @@ The tool is designed to support unattended execution through Windows Task Schedu
 - Exports projects to .exp files
 - Organizes backups by group and date
 
+### Backup Retention
+- Automatically removes older backup sets
+- Retains a configurable number of backup folders
+- Only processes folders matching the YYYY-MM-DD format
+- Ignores logs and other non-backup folders
+- Runs after successful backup completion
+
 ### Project Cleanup
 - Removes existing AcSELerator projects before backup
 - Prevents duplicate project names (.0, .1, .2, etc.)
@@ -70,6 +77,7 @@ Example:
 {
     "backup_path": "C:\\RTACBackups",
     "group_name": "Solar",
+    "retention_backups": 6,
 
     "rtacs": [
         {
@@ -96,6 +104,7 @@ Example:
 |---------|-------------|
 | backup_path | Root backup directory |
 | group_name | Backup group name |
+| retention_backups| Number of backup sets to retain |
 | device | Friendly device name |
 | ip | RTAC IP address |
 | username | RTAC username |
@@ -200,6 +209,38 @@ If validation fails, execution stops immediately.
 
 ---
 
+## Backup Retention
+
+The utility can automatically retain a fixed number of backup sets.
+
+Example:
+
+retention_backups = 6
+
+Backup folders:
+
+2026-01-01
+2026-02-01
+2026-03-01
+2026-04-01
+2026-05-01
+2026-06-01
+2026-07-01
+2026-08-01
+
+After cleanup:
+
+2026-03-01
+2026-04-01
+2026-05-01
+2026-06-01
+2026-07-01
+2026-08-01
+
+Only folders matching the YYYY-MM-DD naming format are considered backup folders.
+
+---
+
 ## Connectivity Checks
 
 Before attempting a backup, the utility performs a ping test to each enabled RTAC.
@@ -235,6 +276,8 @@ Export Project
         ↓
 Repeat for Remaining RTACs
         ↓
+Cleanup Old Backup Sets
+        ↓
 Summary Logging
         ↓
 Stop AcSELerator
@@ -243,6 +286,11 @@ Stop AcSELerator
 ---
 
 ## Version History
+
+### v1.5.0
+- Added backup retention management
+- Added retention_backups configuration option
+- Added automatic cleanup of old backup folders
 
 ### v1.4.0
 - Added connectivity pre-checks

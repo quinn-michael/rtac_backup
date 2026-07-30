@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.5.0
+
+### Added
+- Automatic backup retention management.
+- Retention_backups configuration setting.
+- Cleanup of old backup folders after successful backup runs.
+- Retention cleanup logging and reporting.
+
+### Changed
+- Retention is now based on backup count instead of retention days.
+- Backup folders are sorted by date and the newest backup sets are retained.
+- Cleanup runs after successful backup completion to avoid removing restore points before a successful backup is created.
+
+### Improved
+- Automatically maintains a fixed number of historical backup sets.
+- Preserves non-backup folders such as logs and manual exports.
+
 ## v1.4.0
 
 ### Added
