@@ -278,6 +278,42 @@ Only folders matching the YYYY-MM-DD naming format are considered backup folders
 
 ---
 
+## Connectivity Test Mode
+
+Connectivity test mode allows network access to be verified before performing backups.
+
+Example:
+
+```cmd
+RTACBackup.exe config_solar.json --test-connectivity
+```
+
+Example output:
+
+```text
+INFO Running connectivity test only
+
+INFO Checking connectivity to BUR-PPC01 (10.127.219.10)
+INFO BUR-PPC01 connectivity check passed
+
+INFO Checking connectivity to BUR-AXION01 (10.127.219.11)
+ERROR BUR-AXION01 connectivity check failed
+
+============================================================
+Connectivity Passed: 1
+Connectivity Failed: 1
+```
+
+This mode is useful for:
+
+- Firewall rule validation
+- VPN testing
+- New host commissioning
+- Network troubleshooting
+- Confirming RTAC reachability before scheduled backups
+
+---
+
 ## Connectivity Checks
 
 Before attempting a backup, the utility performs a ping test to each enabled RTAC.
@@ -291,6 +327,8 @@ If connectivity fails:
 ---
 
 ## Backup Workflow
+
+### Full Backup Mode
 
 ```text
 Load Configuration
@@ -320,9 +358,28 @@ Summary Logging
 Stop AcSELerator
 ```
 
+### Connectivity Test Mode
+
+```text
+Load Configuration
+        ↓
+Validate Configuration
+        ↓
+Connectivity Check
+        ↓
+Summary Logging
+        ↓
+Exit
+```
+
 ---
 
 ## Version History
+
+### v1.6.0
+- Added connectivity-only test mode
+- Added --test-connectivity command-line option
+- Added connectivity summary reporting
 
 ### v1.5.0
 - Added backup retention management
@@ -355,7 +412,6 @@ Stop AcSELerator
 
 ## Future Enhancements
 
-- Backup retention management
 - Windows Credential Manager integration
 - Email notifications
 - Connectivity retry logic
