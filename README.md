@@ -99,7 +99,7 @@ Example:
     "group_name": "Solar",
     "retention_backups": 6,
 
-    "smtp_server": "mail.smtp2go.com",
+    "smtp_server": "smtphostname.com",
     "smtp_port": 465,
     "smtp_username": "smtp-user",
     "smtp_credential_name": "SMTP-PROD",
