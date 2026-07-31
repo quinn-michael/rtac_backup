@@ -300,7 +300,7 @@ RTACBackup.exe config_solar.json --validate-credentials
 
 ---
 
-## Building Executable
+## Building RTACBackup Executable
 
 Run the following commands on a computer with Python installed:
 
@@ -318,6 +318,23 @@ pyinstaller --onefile --name RTACBackup main.py
 
 ---
 
+## Building RTACBackup Executable
+
+Run the following commands on a computer with Python installed:
+
+### Install PyInstaller
+
+```cmd
+pip install pyinstaller
+```
+
+### Generate Executable
+
+```cmd
+pyinstaller --onefile --name RTACBackup main.py
+```
+
+---
 ## Backup Structure
 
 Example:
@@ -553,6 +570,11 @@ Exit
 
 ## Version History
 
+### v1.8.0
+- Windows Credential Manager support for RTAC and SMTP credentials
+- Added validate-configuration test mode
+- Added --validate-configuration command-line option
+
 ### v1.7.0
 - Added email notifications
 - Added backup summary emails
@@ -595,8 +617,7 @@ Exit
 
 ## Future Enhancements
 
-- Windows Credential Manager integration
-- Email notifications
+- Push to Sharepoint with Microsoft Graph
 - Connectivity retry logic
 - Detailed backup metrics
 
