@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.8.0
+
+### Added
+- Windows Credential Manager support for RTAC credentials
+- Windows Credential Manager support for SMTP credentials
+- --validate-credentials mode
+- Failed device reporting
+
+### Changed
+- Improved configuration validation
+- Improved logging and diagnostics
+
+### Security
+- Removed requirement to store credentials in configuration files
+
+
 ## v1.7.0
 
 ### Added

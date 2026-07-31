@@ -4,6 +4,16 @@ A Python utility for performing automated backups of SEL RTAC projects using AcS
 
 The tool is designed to support unattended execution through Windows Task Scheduler and provides centralized backup management, logging, validation, and project cleanup.
 
+Features include:
+- Automated RTAC project backups
+- Email summary notifications
+- Backup retention management
+- Connectivity testing
+- Credential validation
+- Windows Credential Manager integration
+- Task Scheduler support
+- Service account deployment support
+
 ---
 
 ## Features
@@ -62,9 +72,11 @@ The tool is designed to support unattended execution through Windows Task Schedu
 
 ### Software
 
-- Windows 10 or Windows 11
+- Windows Operating System running on the backup host
 - SEL AcSELerator RTAC
 - AcRtacCmd accessible from the system PATH
+- RTACBackup.exe for automated scheduling
+- credentials_setup.exe for adding credentials to Windows Credential Manager on the backup host
 - Python 3.10+ (for development or testing)
 
 ### Network
@@ -90,7 +102,7 @@ Example:
     "smtp_server": "mail.smtp2go.com",
     "smtp_port": 465,
     "smtp_username": "smtp-user",
-    "smtp_password": "smtp-password",
+    "smtp_credential_name": "SMTP-PROD",
     "smtp_sender": "rtac-backups@bluearth.ca",
     
     "notification_recipients": [
@@ -102,14 +114,14 @@ Example:
             "device": "BUR-PPC01",
             "ip": "10.10.10.10",
             "username": "SEL",
-            "password": "password",
+            "credential_name": "RTAC-BUR-PPC01"
             "enabled": true
         },
         {
             "device": "BUR-AXION01",
             "ip": "10.10.10.11",
             "username": "SEL",
-            "password": "password",
+            "credential_name": "RTAC-BUR-AXION01"
             "enabled": false
         }
     ]
@@ -147,13 +159,13 @@ pip install keyring
 ### Full Backup Run
 
 ```cmd
-python main.py config_solar.json
+RTACBackup.exe config_solar.json
 ```
 
 or
 
 ```cmd
-RTACBackup.exe config_solar.json
+python main.py config_solar.json
 ```
 
 Performs:
@@ -167,13 +179,13 @@ Performs:
 ### Connectivity Test Only
 
 ```cmd
-python main.py config_solar.json --test-connectivity
+RTACBackup.exe config_solar.json --test-connectivity
 ```
 
 or
 
 ```cmd
-RTACBackup.exe config_solar.json --test-connectivity
+python main.py config_solar.json --test-connectivity
 ```
 
 Performs:
@@ -189,6 +201,102 @@ Does not perform:
 - RTAC read operations
 - Project exports
 - Backup retention cleanup
+
+### Credential Validation
+
+```cmd
+RTACBackup.exe config_solar.json --validate-credentials
+```
+
+or
+
+```cmd
+python main.py config_solar.json --validate-credentials
+```
+
+Validates:
+
+- RTAC credentials
+- SMTP credentials
+
+Does not perform:
+
+- AcSELerator startup
+- AcSELerator login
+- Project cleanup
+- RTAC read operations
+- Project exports
+- Backup retention cleanup
+
+---
+
+## Windows Credential Manager
+
+### Why Windows Credential Manager
+Passwords are no longer stored in configuration files.
+Credentials are stored securely in Windows Credential Manager and referenced by name.
+
+### Create Credentials
+On the backup host, run:
+
+```cmd
+credentials_setup.exe
+```
+
+Example:
+
+```text
+Credential Name:
+RTAC-BUR-PPC01
+
+Password:
+********
+```
+
+### Verify Credentials
+On the backup host, run
+
+```cmd
+RTACBackup.exe config_solar.json --validate-credentials
+```
+
+---
+
+## Production Deployment
+
+### Create Service Account
+On the Domain Controller, create a service account.
+
+Minimum Requirements:
+- Log on as batch job
+- Read/write permission to the backup location
+- Access Windows Credential Manager entries
+- Access to AcRtacCmd
+
+### Initial Setup
+Log in as the service account and:
+1. Create all RTAC credentials using credentials_setup.exe
+2. Create SMTP credentials using credentials_setup.exe
+3. Run credential validation using RTACBackup.exe
+
+This ensure Credential Manager entries are stored in the correct user profile.
+
+### Firewall Requirements
+The backup host must be permitted to:
+1. Ping all RTAC hosts
+2. Access the RTAC with the AcSELerator RTAC software (ports)
+
+### Validate Firewall Configuration
+Run:
+```cmd
+RTACBackup.exe config_solar.json --test-connectivity
+```
+
+### Validate Credential Manager
+Run:
+```cmd
+RTACBackup.exe config_solar.json --validate-credentials
+```
 
 ---
 

@@ -1,5 +1,6 @@
 # Create folder with date name
 import json
+import keyring
 import os
 import sys
 import logging
@@ -12,6 +13,24 @@ from email.message import EmailMessage
 def load_config(config_file):
     with open(config_file, "r") as f:
         return json.load(f)
+
+def get_credential(
+    credential_name
+):
+
+    password = keyring.get_password(
+        "RTACBackup",
+        credential_name
+    )
+
+    if password is None:
+
+        raise Exception(
+            f"Credential not found: "
+            f"{credential_name}"
+        )
+
+    return password
 
 def cleanup_old_backups(
     base_path,
@@ -209,7 +228,7 @@ def read_and_backup_rtac(device, ipaddress, username, password, backup_folder):
     )
 
     # Read the project with all advanced items
-    command = 'AcRtacCmd read -p {} -v ALL {} {}'.format(password, ipaddress, username)
+    command = 'AcRtacCmd read -p "{}" -v ALL {} {}'.format(password, ipaddress, username)
     logging.info(
         f"AcRtacCmd read -p ******** "
         f"-v ALL {ipaddress} {username}"
@@ -351,11 +370,14 @@ def send_summary_email(
         if r["status"] == "Failed"
     ]
 
+    failed_devices.sort(
+        key=lambda x: x["device"]
+    )
+
     if failed_devices:
 
         body.append("")
         body.append("Failed Devices:")
-        body.append("")
 
         for device in failed_devices:
 
@@ -387,16 +409,33 @@ def send_summary_email(
             filename=os.path.basename(log_file)
         )
 
-    server = smtplib.SMTP_SSL(
-        config["smtp_server"],
-        config["smtp_port"]
+    logging.info(
+        "Connecting to SMTP server"
     )
 
-    try:
+    with smtplib.SMTP_SSL(
+        config["smtp_server"],
+        config["smtp_port"],
+        timeout=15
+    ) as server:
+
+        if "smtp_credential_name" in config:
+
+            smtp_password = get_credential(
+                config["smtp_credential_name"]
+            )
+
+        else:
+
+            smtp_password = config["smtp_password"]
 
         server.login(
             config["smtp_username"],
-            config["smtp_password"]
+            smtp_password
+        )
+
+        logging.info(
+            "SMTP authentication successful"
         )
 
         server.send_message(msg)
@@ -404,10 +443,6 @@ def send_summary_email(
         logging.info(
             "Summary email sent successfully"
         )
-
-    finally:
-
-        server.quit()
 
 def setup_logging(base_path, group_name):
 
@@ -495,7 +530,7 @@ def shutdown():
             "Unable to stop AcSELerator RTAC"
         )
 
-def validate_config(config):
+def validate_config(config, validate_referenced_credentials=True):
 
     logging.info("Validating configuration")
 
@@ -523,7 +558,6 @@ def validate_config(config):
         "smtp_server",
         "smtp_port",
         "smtp_username",
-        "smtp_password",
         "smtp_sender",
         "notification_recipients"
     ]
@@ -534,6 +568,37 @@ def validate_config(config):
 
             raise Exception(
                 f"Missing email config field: {field}"
+            )
+    
+    if (
+        "smtp_password" not in config
+        and
+        "smtp_credential_name" not in config
+    ):
+
+        raise Exception(
+            "Configuration requires "
+            "smtp_password or "
+            "smtp_credential_name"
+        )
+    
+    if validate_referenced_credentials and "smtp_credential_name" in config:
+
+        try:
+
+            get_credential(
+                config["smtp_credential_name"]
+            )
+
+        except Exception as ex:
+
+            logging.error(
+                f"FAIL {config['smtp_credential_name']}: {ex}"
+            )
+
+            raise Exception(
+                f"SMTP credential not found: "
+                f"{config['smtp_credential_name']}"
             )
 
     if not isinstance(config["rtacs"], list):
@@ -563,11 +628,13 @@ def validate_config(config):
     required_rtac_fields = [
         "device",
         "ip",
-        "username",
-        "password"
+        "username"
     ]
 
     for rtac in config["rtacs"]:
+
+        if not rtac.get("enabled", True):
+            continue
 
         for field in required_rtac_fields:
 
@@ -590,6 +657,36 @@ def validate_config(config):
 
         ip_addresses.add(rtac["ip"])
 
+        if (
+            "password" not in rtac
+            and
+            "credential_name" not in rtac
+        ):
+
+            raise Exception(
+                f"{rtac['device']} requires "
+                f"password or credential_name"
+            )
+        
+        if validate_referenced_credentials and "credential_name" in rtac:
+
+            try:
+
+                get_credential(
+                    rtac["credential_name"]
+                )
+
+            except Exception as ex:
+
+                logging.error(
+                    f"FAIL {rtac['credential_name']}: {ex}"
+                )
+
+                raise Exception(
+                    f"Credential not found: "
+                    f"{rtac['credential_name']}"
+                )
+
     logging.info(
         f"Configured RTACs: {len(config['rtacs'])}"
     )
@@ -602,19 +699,118 @@ def validate_config(config):
         "Configuration validation passed"
     )
 
+def validate_credentials(config):
+
+    passed = 0
+    failed = 0
+
+    logging.info(
+        "Credential Validation"
+    )
+
+    logging.info(
+        "=" * 60
+    )
+
+    credential_names = set()
+
+    for rtac in config["rtacs"]:
+
+        if not rtac.get("enabled", True):
+            continue
+
+        if "credential_name" not in rtac:
+            continue
+
+        credential_names.add(
+            rtac["credential_name"]
+        )
+
+    if "smtp_credential_name" in config:
+
+        credential_names.add(
+            config["smtp_credential_name"]
+        )
+
+    for credential_name in sorted(
+        credential_names
+    ):
+
+        try:
+
+            get_credential(
+                credential_name
+            )
+
+            logging.info(
+                f"PASS {credential_name}"
+            )
+
+            passed += 1
+
+        except Exception as ex:
+
+            logging.error(
+                f"FAIL {credential_name}: {ex}"
+            )
+
+            failed += 1
+
+    logging.info(
+        "=" * 60
+    )
+
+    logging.info(
+        f"Credentials Passed: {passed}"
+    )
+
+    logging.info(
+        f"Credentials Failed: {failed}"
+    )
+
+    return failed
+
+
+
+valid_options = [
+    "--test-connectivity",
+    "--validate-credentials"
+]
 
 if len(sys.argv) not in [2, 3]:
-    print("Usage: RTACBackup.exe <config_file> [--test-connectivity]")
+
+    print(
+        "Usage: RTACBackup.exe "
+        "<config_file> "
+        "[--test-connectivity | "
+        "--validate-credentials]"
+    )
+
     sys.exit(1)
 
-if len(sys.argv) == 3 and sys.argv[2] != "--test-connectivity":
-    print("Usage: RTACBackup.exe <config_file> [--test-connectivity]")
-    print(f"Unknown option: {sys.argv[2]}")
-    sys.exit(1)
+if len(sys.argv) == 3:
+
+    if sys.argv[2] not in valid_options:
+
+        print(f"Unknown option: {sys.argv[2]}")
+
+        print(
+            "Usage: RTACBackup.exe "
+            "<config_file> "
+            "[--test-connectivity | "
+            "--validate-credentials]"
+        )
+
+        sys.exit(1)
 
 connectivity_only = (
     len(sys.argv) == 3
     and sys.argv[2] == "--test-connectivity"
+)
+
+credential_only = (
+    len(sys.argv) == 3
+    and sys.argv[2] == "--validate-credentials"
 )
 
 config_file = sys.argv[1]
@@ -627,11 +823,23 @@ log_file = setup_logging(
 )
 
 try:
-    validate_config(config)
+    require_credentials = (
+        not credential_only
+        and not connectivity_only
+    )
+
+    validate_config(
+        config,
+        validate_referenced_credentials=require_credentials
+    )
+
+
 except Exception as ex:
+
     logging.error(
         f"Configuration validation failed: {ex}"
     )
+
     sys.exit(1)
 
 logging.info(
@@ -639,9 +847,24 @@ logging.info(
 )
 
 if connectivity_only:
-    logging.info("RTAC connectivity test started")
+
+    logging.info(
+        "RTAC connectivity test started"
+    )
+
+elif credential_only:
+
+    logging.info(
+        "RTAC credential validation started"
+    )
+
 else:
-    logging.info("RTAC backup started")
+
+    logging.info(
+        "RTAC backup started"
+    )
+
+
 
 logging.info(f"Configuration file: {config_file}")
 logging.info(f"Log file: {log_file}")
@@ -653,6 +876,21 @@ if connectivity_only:
     )
 
     failed_count = run_connectivity_test(config)
+
+    if failed_count > 0:
+        sys.exit(1)
+
+    sys.exit(0)
+
+if credential_only:
+
+    logging.info(
+        "Running credential validation only"
+    )
+
+    failed_count = validate_credentials(
+        config
+    )
 
     if failed_count > 0:
         sys.exit(1)
@@ -700,11 +938,22 @@ try:
 
                 continue
 
+            if "credential_name" in rtac:
+
+                password = get_credential(
+                    rtac["credential_name"]
+                )
+
+            else:
+
+                password = rtac["password"]
+
+
             read_and_backup_rtac(
                 rtac["device"],
                 rtac["ip"],
                 rtac["username"],
-                rtac["password"],
+                password,
                 backup_folder
                 )
 
@@ -762,6 +1011,31 @@ try:
     logging.info(
         f"Backup Folders Removed: "
         f"{deleted_backup_folders}"
+    )
+
+    failed_devices = [
+        r for r in results
+        if r["status"] == "Failed"
+    ]
+
+    failed_devices.sort(
+        key=lambda x: x["device"]
+    )
+
+    if failed_devices:
+
+        logging.info("-" * 60)
+        logging.info("Failed Devices")
+
+        for device in failed_devices:
+
+            logging.info(
+                f"{device['device']}: "
+                f"{device['message']}"
+            )
+            
+    logging.info(
+        "=" * 60
     )
 
     try:
