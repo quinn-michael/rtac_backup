@@ -3,7 +3,7 @@
     "group_name": "Solar",
     "retention_backups": 6,
 
-    "smtp_server": "hostserver@smtpserver.com",
+    "smtp_server": "smtphostname.com",
     "smtp_port": 465,
     "smtp_sender": "sender@example.ca",
     "smtp_username": "username",
