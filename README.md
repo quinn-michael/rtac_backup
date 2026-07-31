@@ -138,13 +138,13 @@ Example:
 | smtp_server | SMTP server hostname |
 | smtp_port | SMTP server port |
 | smtp_username | SMTP account username |
-| smtp_password | SMTP account password |
+| smtp_credential_name | SMTP credential name in Credential Manager |
 | smtp_sender | Email sender address |
 | notification_recipients | List of notification recipients |
 | device | Friendly device name |
 | ip | RTAC IP address |
 | username | RTAC username |
-| password | RTAC password |
+| credential_name | RTAC credential name in Credential Manager |
 | enabled | Include device in backup run |
 
 ---
