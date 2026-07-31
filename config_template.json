@@ -1,0 +1,34 @@
+{
+    "backup_path": "C:\\RTACBackups",
+    "group_name": "Solar",
+    "retention_backups": 6,
+
+    "smtp_server": "hostserver@smtpserver.com",
+    "smtp_port": 465,
+    "smtp_sender": "sender@example.ca",
+    "smtp_username": "username",
+    "smtp_password": "password",
+
+    "notification_recipients": [
+        "recipient@example.com"
+    ],
+
+    "rtacs": [
+        {
+            "device": "BBB-PPC01",
+            "site": "Spicy Pickles",
+            "ip": "10.10.10.10",
+            "enabled": true,
+            "username": "admin",
+            "password": "password"
+        },
+		{
+            "device": "CCC-RTAC01",
+            "site": "Twin Pines",
+            "ip": "10.11.10.10",
+            "enabled": true,
+            "username": "admin",
+            "password": "password"
+        }
+   ]
+}
